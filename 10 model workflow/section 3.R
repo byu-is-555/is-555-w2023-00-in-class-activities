@@ -1,6 +1,6 @@
 library(tidyverse)
-tidyverse_update()
-install.packages('tidymodels')
+# tidyverse_update()
+# install.packages('tidymodels')
 library(tidymodels)
 
 # Super simple scenario: build a regression model to predict `hwy` mpg from `cty` mpg and engine `displ`.
@@ -8,8 +8,9 @@ library(tidymodels)
 mpg
 
 # The initial split operation will handle the train/test split for you.
+set.seed(42)
 mpg_split <- initial_split(mpg,         # <-- dataset to be split
-                           prop = 0.75, # <-- default is .75, only needed if you want a different split.
+                           # prop = 0.75, # <-- default is .75, only needed if you want a different split.
                            strata = hwy) # <-- give the dv to strata so that train/test are similar in distribution 
 
 # Then you get your training and test sets out with appropriately named functions:
