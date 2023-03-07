@@ -1,4 +1,6 @@
 library(tidyverse)
+tidyverse_update()
+install.packages('tidymodels')
 library(tidymodels)
 
 # Super simple scenario: build a regression model to predict `hwy` mpg from `cty` mpg and engine `displ`.
