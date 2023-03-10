@@ -72,13 +72,22 @@ titanic <- read_csv('https://www.dropbox.com/s/92funarubgk5rzh/titanic_clean.csv
 
 
 # First let's make sure factors are factors
-
+leo <- titanic %>% 
+  mutate(across(c(survived, pclass, had_cabin), ~as.factor(.x)))
 
 # Now let's do a train/test split
+set.seed(43)
+leo_split <- initial_split(leo, strata = survived)
 
+leo_training <- leo_split %>% training()
+leo_testing <- leo_split %>% testing()
 
 # Plan the model setup, including the engine and mode
+leo_model <- logistic_reg() %>% 
+  set_engine('glm') %>% 
+  set_mode('classification')
 
+show_engines('rand_forest')
 
 # relevant model types: logistic_reg(), linear_reg(), decision_tree(), rand_forest(), boost_tree()
 # show_engines('logistic_reg')
@@ -86,13 +95,48 @@ titanic <- read_csv('https://www.dropbox.com/s/92funarubgk5rzh/titanic_clean.csv
 
 
 # Now fit a model, look at output
+leo_fit <- leo_model %>% 
+  fit(survived ~ .,
+      data = leo_training)
 
-
+leo_fit %>% tidy()
 
 # Calculate predictions
+leo_predictions <- leo_fit %>% 
+  predict(new_data = leo_testing)
+
+leo_predictions_2 <- leo_fit %>% 
+  predict(new_data = leo_testing,
+          type = 'prob')
 
 
+
+test_results <- leo_testing %>% 
+  # select(survived)
+  bind_cols(leo_predictions, leo_predictions_2)
 
 # Now let's build a confusion matrix and explore a few of the related metrics.
+test_results %>% 
+  conf_mat(truth = survived,
+           estimate = .pred_class) %>% 
+  summary()
 
 
+thresholds <- test_results %>% 
+  roc_curve(truth = survived,
+            estimate = .pred_0)
+
+thresholds %>% 
+  autoplot()
+
+test_results %>% 
+  roc_auc(truth = survived,
+            estimate = .pred_0)
+
+
+leo_last <- leo_model %>% 
+  last_fit(survived ~ .,
+           split = leo_split)
+
+leo_last %>% collect_metrics()
+leo_last %>% collect_predictions()

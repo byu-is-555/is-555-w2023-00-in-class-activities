@@ -71,27 +71,129 @@ titanic <- read_csv('https://www.dropbox.com/s/92funarubgk5rzh/titanic_clean.csv
 
 
 # First let's make sure factors are factors
+leo <- titanic %>% 
+  mutate(across(c(survived, pclass, had_cabin), ~as.factor(.x)))
 
 
 # Now let's do a train/test split
+set.seed(42)
+leo_split <- initial_split(leo, strata = survived)
 
+leo_training <- leo_split %>% training()
+leo_testing <- leo_split %>% testing()
 
 # Plan the model setup, including the engine and mode
+leo_model <- logistic_reg() %>% 
+  set_engine('glm') %>% 
+  set_mode('classification')
 
+show_engines('logistic_reg')
 
 # relevant model types: logistic_reg(), linear_reg(), decision_tree(), rand_forest(), boost_tree()
 # show_engines('logistic_reg')
 
-
-
 # Now fit a model, look at output
+leo_fit <- leo_model %>% 
+  fit(survived ~ .,
+      data = leo_training)
 
-
+leo_fit %>% tidy()
 
 # Calculate predictions
+leo_predictions <- leo_fit %>% 
+  predict(new_data = leo_testing)
 
+leo_predictions <- leo_fit %>% 
+  predict(new_data = leo_testing)
 
+leo_predictions_prob <- leo_fit %>% 
+  predict(new_data = leo_testing,
+          type = 'prob')
+
+leo_results <- leo_testing %>% 
+  bind_cols(leo_predictions, leo_predictions_prob)
+  
 
 # Now let's build a confusion matrix and explore a few of the related metrics.
+leo_results %>% 
+  conf_mat(truth = survived,
+           estimate = .pred_class) %>% 
+  summary()
+
+leo_results %>% 
+  sens(truth = survived,
+       estimate = .pred_class)
+
+roc_data <- leo_results %>% 
+  roc_curve(truth = survived, .pred_0)
+
+roc_data %>% 
+  autoplot()
+
+leo_results %>% 
+  roc_auc(truth = survived, .pred_0)
+
+leo_last_fit <- leo_model %>% 
+  last_fit(survived ~ .,
+         split = leo_split)
+
+leo_last_fit %>% collect_predictions()
+leo_last_fit %>% collect_metrics()
+
+# BONUS ROUND -------------------------------------------------------------------------------------------
 
 
+titanic_raw <- read_csv('https://www.dropbox.com/s/petmujrpxa3qn3p/titanic.csv?dl=1')
+# BONUS -------------------------------------------------------------------------------------------------
+
+
+
+titanic_2 <- titanic_raw %>% 
+  janitor::clean_names() %>% 
+  mutate(had_cabin = if_else(is.na(cabin), 0, 1)) %>% 
+  select(survived, pclass, sex, age, sib_sp, parch, fare, embarked, had_cabin) %>% 
+  mutate(across(c(survived, pclass, had_cabin), ~as.factor(.x)))
+
+bonus_split <- initial_split(titanic_2, strata = survived)
+
+bonus_training <- bonus_split %>% training()
+bonus_testing <- bonus_split %>% testing()
+
+bonus_recipe <- recipe(survived ~ ., data = bonus_training) %>% 
+  step_impute_median(all_numeric_predictors()) %>% 
+  step_impute_mode(all_nominal_predictors()) %>% 
+  step_range(fare, min = 1, max = 1000) %>% 
+  step_BoxCox(all_numeric_predictors()) %>% 
+  step_dummy(all_nominal_predictors()) %>% 
+  step_center(all_numeric_predictors()) %>% 
+  step_scale(all_numeric_predictors()) %>% 
+  step_corr(all_numeric_predictors(), threshold = .8) %>% 
+  step_nzv(all_predictors())
+  
+bonus_recipe
+
+bonus_prep <- prep(bonus_recipe, training = bonus_training)
+
+bonus_training_ready <- bake(bonus_prep, new_data = bonus_training)
+bonus_testing_ready <- bake(bonus_prep, new_data = bonus_testing)
+
+
+
+# telecom_recipe <- recipe(canceled_service ~ ., data = telecom_training) %>% 
+#   # Removed correlated predictors
+#   step_corr(all_numeric(), threshold = 0.8) %>% 
+#   # Log transform numeric predictors
+#   step_log(all_numeric(), base = 10) %>%
+#   # Normalize numeric predictors
+#   step_normalize(all_numeric()) %>%
+#   # Create dummy variables
+#   step_dummy(all_nominal, -all_outcomes())
+
+
+# # Train logistic model
+# logistic_fit <- logistic_model %>% 
+#   fit(canceled_service ~ ., data = telecom_training_prep)
+
+# # Create a confusion matrix
+# telecom_results %>% 
+#   conf_mat(truth = canceled_service, estimate = .pred_class)
