@@ -178,22 +178,3 @@ bonus_training_ready <- bake(bonus_prep, new_data = bonus_training)
 bonus_testing_ready <- bake(bonus_prep, new_data = bonus_testing)
 
 
-
-# telecom_recipe <- recipe(canceled_service ~ ., data = telecom_training) %>% 
-#   # Removed correlated predictors
-#   step_corr(all_numeric(), threshold = 0.8) %>% 
-#   # Log transform numeric predictors
-#   step_log(all_numeric(), base = 10) %>%
-#   # Normalize numeric predictors
-#   step_normalize(all_numeric()) %>%
-#   # Create dummy variables
-#   step_dummy(all_nominal, -all_outcomes())
-
-
-# # Train logistic model
-# logistic_fit <- logistic_model %>% 
-#   fit(canceled_service ~ ., data = telecom_training_prep)
-
-# # Create a confusion matrix
-# telecom_results %>% 
-#   conf_mat(truth = canceled_service, estimate = .pred_class)
