@@ -187,6 +187,9 @@ df %>%
 
 
 
+# New Approach ------------------------------------------------------------------------------------------
+
+
 
 titanic_raw <- read_csv('https://www.dropbox.com/s/petmujrpxa3qn3p/titanic.csv?dl=1')
 

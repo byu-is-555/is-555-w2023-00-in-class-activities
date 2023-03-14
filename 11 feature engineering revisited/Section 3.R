@@ -184,3 +184,16 @@ df %>%
   select(where(is.numeric)) %>% 
   mutate(across(c(age,sib_sp,parch,fare), ~scale_this(.x)))
 
+
+# New Approach ------------------------------------------------------------------------------------------
+library(tidymodels)
+
+
+titanic_raw <- read_csv('https://www.dropbox.com/s/petmujrpxa3qn3p/titanic.csv?dl=1')
+
+
+leo <- titanic_raw %>% 
+  janitor::clean_names() %>% 
+  mutate(had_cabin = if_else(is.na(cabin), 0, 1)) %>% 
+  select(survived, pclass, sex, age, sib_sp, parch, fare, embarked, had_cabin) %>% 
+  mutate(across(c(survived, pclass, had_cabin), ~as.factor(.x)))
