@@ -197,3 +197,36 @@ leo <- titanic_raw %>%
   mutate(had_cabin = if_else(is.na(cabin), 0, 1)) %>% 
   select(survived, pclass, sex, age, sib_sp, parch, fare, embarked, had_cabin) %>% 
   mutate(across(c(survived, pclass, had_cabin), ~as.factor(.x)))
+
+set.seed(42)
+leo_split <- initial_split(leo, strata = survived)
+
+leo_training <- leo_split %>% training()
+leo_testing <- leo_split %>% testing()
+
+leo_rec <- recipe(survived ~ ., 
+                  data = leo_training) %>% 
+  step_impute_mean(all_numeric_predictors()) %>% 
+  step_impute_mode(all_nominal_predictors()) %>% 
+  step_range(fare, min = 1, max = 1000) %>% 
+  step_BoxCox(all_numeric_predictors()) %>% 
+  step_normalize(all_numeric_predictors()) %>% 
+  step_dummy(all_nominal_predictors()) %>% 
+  step_corr(all_numeric_predictors(), threshold = .5) %>% 
+  step_nzv(all_predictors())
+
+leo_rec_prep <- leo_rec %>% prep(training = leo_training)
+
+
+leo_training_baked <- leo_rec_prep %>% bake(new_data = leo_training)
+leo_testing_baked <- leo_rec_prep %>% bake(new_data = leo_testing)
+
+
+
+
+
+formatted_data_to_score <- bake(leo_rec_prep, new_data_from_last_month)
+
+
+
+

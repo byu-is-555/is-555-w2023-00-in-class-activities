@@ -188,7 +188,7 @@ df %>%
 
 
 # New Approach ------------------------------------------------------------------------------------------
-
+library(tidymodels)
 
 
 titanic_raw <- read_csv('https://www.dropbox.com/s/petmujrpxa3qn3p/titanic.csv?dl=1')
@@ -201,4 +201,23 @@ leo <- titanic_raw %>%
   mutate(across(c(survived, pclass, had_cabin), ~as.factor(.x)))
 
 leo_split <- initial_split(leo, strata = survived)
+
+leo_training <- leo_split %>% training()
+leo_testing <- leo_split %>% testing()
+
+leo_rec <- recipe(survived ~ .,
+       data = leo_training) %>% 
+  step_impute_mean(all_numeric_predictors()) %>% 
+  step_impute_knn(embarked) %>%
+  step_range(fare, min = 1, max = 1000) %>% 
+  step_BoxCox(all_numeric_predictors()) %>% 
+  step_normalize(all_numeric_predictors()) %>% 
+  step_corr(all_numeric_predictors(), threshold = .3)
+
+leo_rec_prep <- leo_rec %>% prep(training = leo_training)
+
+leo_training_baked <- leo_rec_prep %>% bake(new_data = leo_training)
+leo_testing_baked <- leo_rec_prep %>% bake(new_data = leo_testing)
+
+
 
